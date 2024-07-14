@@ -4,7 +4,7 @@ mod errors;
 use std::io::Write;
 
 use clap::Parser;
-use cli::Cli;
+use cli::{Cli, OutputFormat};
 use k8s_openapi::api::core::v1::Node;
 use kube::{Api, ResourceExt};
 use tracing::debug;
@@ -33,7 +33,11 @@ async fn main() -> color_eyre::Result<()> {
     }
 
     let nodes = nodes(cli.name).await?;
-    print_table(nodes)?;
+
+    match cli.output_format {
+        OutputFormat::Plain => print_plain(nodes)?,
+        _ => print_table(nodes)?,
+    }
 
     Ok(())
 }
@@ -47,6 +51,13 @@ fn print_table(nodes: Vec<NodeProviderID>) -> color_eyre::Result<()> {
     }
     tw.flush()?;
 
+    Ok(())
+}
+
+fn print_plain(nodes: Vec<NodeProviderID>) -> color_eyre::Result<()> {
+    for node in nodes {
+        println!("{}",  node.provider_id);
+    }
     Ok(())
 }
 
