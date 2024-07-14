@@ -7,7 +7,6 @@ use clap::Parser;
 use cli::{Cli, OutputFormat};
 use k8s_openapi::api::core::v1::Node;
 use kube::{Api, ResourceExt};
-use tracing::debug;
 
 fn init_tracing() {
     std::env::set_var(
@@ -26,13 +25,18 @@ async fn main() -> color_eyre::Result<()> {
 
     let cli = Cli::parse();
 
-    if let Some(context) = cli.context {
-        debug!("using kubeconfig context: {}", context);
-    } else {
-        debug!("using default kubeconfig context");
-    }
+    let client_config = match cli.context {
+        Some(ref context) => {
+            kube::Config::from_kubeconfig(&kube::config::KubeConfigOptions {
+                context: Some(context.clone()),
+                ..Default::default()
+            })
+            .await?
+        }
+        None => kube::Config::infer().await?,
+    };
 
-    let nodes = nodes(cli.name).await?;
+    let nodes = nodes(kube::Client::try_from(client_config)?, cli.name).await?;
 
     match cli.output_format {
         OutputFormat::Plain => print_plain(nodes)?,
@@ -56,13 +60,15 @@ fn print_table(nodes: Vec<NodeProviderID>) -> color_eyre::Result<()> {
 
 fn print_plain(nodes: Vec<NodeProviderID>) -> color_eyre::Result<()> {
     for node in nodes {
-        println!("{}",  node.provider_id);
+        println!("{}", node.provider_id);
     }
     Ok(())
 }
 
-async fn nodes(node_name: Option<String>) -> color_eyre::Result<Vec<NodeProviderID>> {
-    let client = kube::Client::try_default().await?;
+async fn nodes(
+    client: kube::Client,
+    node_name: Option<String>,
+) -> color_eyre::Result<Vec<NodeProviderID>> {
     let nodes: Api<Node> = Api::all(client);
 
     let nodes = {
@@ -71,7 +77,10 @@ async fn nodes(node_name: Option<String>) -> color_eyre::Result<Vec<NodeProvider
             vec![NodeProviderID::new(&node)?]
         } else {
             let list = nodes.list(&Default::default()).await?;
-            list.items.iter().map(NodeProviderID::new).collect::<color_eyre::Result<Vec<_>>>()?
+            list.items
+                .iter()
+                .map(NodeProviderID::new)
+                .collect::<color_eyre::Result<Vec<_>>>()?
         }
     };
 
