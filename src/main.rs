@@ -1,12 +1,12 @@
 mod cli;
 mod errors;
-
-use std::io::Write;
+mod print;
 
 use clap::Parser;
 use cli::{Cli, OutputFormat};
-use k8s_openapi::api::core::v1::Node;
+use k8s_openapi::{api::core::v1::Node};
 use kube::{Api, ResourceExt};
+use serde::Serialize;
 
 fn init_tracing() {
     std::env::set_var(
@@ -39,29 +39,12 @@ async fn main() -> color_eyre::Result<()> {
     let nodes = nodes(kube::Client::try_from(client_config)?, cli.name).await?;
 
     match cli.output_format {
-        OutputFormat::Plain => print_plain(nodes)?,
-        _ => print_table(nodes)?,
+        OutputFormat::Plain => print::plain(nodes)?,
+        OutputFormat::Json => print::json(nodes)?,
+        OutputFormat::Yaml => print::yaml(nodes)?,
+        _ => print::table(nodes)?,
     }
 
-    Ok(())
-}
-
-fn print_table(nodes: Vec<NodeProviderID>) -> color_eyre::Result<()> {
-    let mut tw = tabwriter::TabWriter::new(std::io::stdout()).padding(3);
-    tw.write_all(b"NODE\tPROVIDER ID\n")?;
-    for node in nodes {
-        let l = format!("{}\t{}\n", node.node.name_any(), node.provider_id);
-        tw.write_all(l.as_bytes())?;
-    }
-    tw.flush()?;
-
-    Ok(())
-}
-
-fn print_plain(nodes: Vec<NodeProviderID>) -> color_eyre::Result<()> {
-    for node in nodes {
-        println!("{}", node.provider_id);
-    }
     Ok(())
 }
 
@@ -87,9 +70,10 @@ async fn nodes(
     Ok(nodes)
 }
 
+#[derive(Serialize)]
 struct NodeProviderID {
+    name: String,
     provider_id: String,
-    node: Node,
 }
 
 impl NodeProviderID {
@@ -101,9 +85,10 @@ impl NodeProviderID {
             .cloned()
             .unwrap_or("".to_string());
 
+        let name = node.name_any();
         Ok(Self {
+            name,
             provider_id,
-            node: node.clone(),
         })
     }
 }

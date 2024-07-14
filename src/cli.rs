@@ -18,4 +18,6 @@ pub struct Cli {
 pub enum OutputFormat {
     Table,
     Plain,
+    Json,
+    Yaml,
 }

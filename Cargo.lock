@@ -829,6 +829,8 @@ dependencies = [
  "color-eyre",
  "k8s-openapi",
  "kube",
+ "serde",
+ "serde_yaml",
  "tabwriter",
  "thiserror",
  "tokio",
