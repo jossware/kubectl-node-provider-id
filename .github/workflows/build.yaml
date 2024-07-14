@@ -81,7 +81,7 @@ jobs:
           draft: true
           prerelease: true
           generate_release_notes: true
-          name: "${{ env.PROJECT_NAME }}-${{ github.ref_name }}"
+          name: "${{ github.ref_name }}"
           fail_on_unmatched_files: true
           files: |
             ./linux-amd64/*
