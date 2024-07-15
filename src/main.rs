@@ -1,10 +1,9 @@
 mod cli;
-mod errors;
 mod print;
 
 use clap::Parser;
 use cli::{Cli, OutputFormat};
-use k8s_openapi::{api::core::v1::Node};
+use k8s_openapi::api::core::v1::Node;
 use kube::{Api, ResourceExt};
 use serde::Serialize;
 
@@ -20,9 +19,15 @@ fn init_tracing() {
 async fn main() -> color_eyre::Result<()> {
     init_tracing();
     color_eyre::config::HookBuilder::default()
+        .display_location_section(false)
+        .display_env_section(false)
         .panic_section("consider reporting the bug on github")
         .install()?;
 
+    run().await
+}
+
+async fn run() -> color_eyre::Result<()> {
     let cli = Cli::parse();
 
     let client_config = match cli.context {
@@ -86,9 +91,6 @@ impl NodeProviderID {
             .unwrap_or("".to_string());
 
         let name = node.name_any();
-        Ok(Self {
-            name,
-            provider_id,
-        })
+        Ok(Self { name, provider_id })
     }
 }
