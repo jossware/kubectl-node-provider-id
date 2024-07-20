@@ -1,10 +1,10 @@
 [package]
 name = "kubectl-node-provider-id"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
-clap = { version = "4.5.9", features = ["derive"] }
+clap = { version = "4.5.9", features = ["derive", "env"] }
 color-eyre = "0.6.3"
 thiserror = "1.0.62"
 kube = { version = "0.90.0", features = ["runtime", "derive"] }
@@ -17,3 +17,4 @@ tokio = { version = "1.38.0", features = ["full"] }
 tabwriter = "1.4.0"
 serde = { version = "1.0.204", features = ["derive"] }
 serde_yaml = "0.9.34"
+node-provider-labeler = { git = "https://github.com/jossware/node-provider-labeler.git" }
