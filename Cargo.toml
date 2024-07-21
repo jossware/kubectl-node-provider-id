@@ -18,3 +18,4 @@ tabwriter = "1.4.0"
 serde = { version = "1.0.204", features = ["derive"] }
 serde_yaml = "0.9.34"
 node-provider-labeler = { git = "https://github.com/jossware/node-provider-labeler.git" }
+etcetera = "0.8.0"
