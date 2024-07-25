@@ -52,12 +52,12 @@ pub(crate) struct Cli {
     /// | {0}         | us-west-2                           |
     /// | {1}         | i-0abcdef1234567890                 |
     ///
-    /// The default output format can also be specified in the configuration
-    /// file.
+    /// The default template can also be specified in the configuration file.
     #[arg(short, long, env("NODEPID_TEMPLATE"), verbatim_doc_comment)]
     pub template: Option<Template>,
 
-    /// Output format. Defaults to table.
+    /// Output format. Defaults to table. The default output format can also be
+    /// specified in the configuration file.
     #[arg(short, long, env("NODEPID_OUTPUT_FORMAT"))]
     pub output_format: Option<OutputFormat>,
 
