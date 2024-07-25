@@ -14,6 +14,10 @@ jobs:
           - name: linux-amd64
             runner: ubuntu-latest
             target: x86_64-unknown-linux-gnu
+          - name: linux-arm64
+            runner: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            cross: true
           - name: win-amd64
             runner: windows-latest
             target: x86_64-pc-windows-msvc
@@ -29,18 +33,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Cache
+        uses: Swatinem/rust-cache@v2
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: "${{ matrix.target }}"
 
-      - name: Setup Cache
-        uses: Swatinem/rust-cache@v2
+      - name: cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
 
       - name: Build Binary
-        run: cargo build --verbose --locked --release --target ${{ matrix.target }}
+        shell: bash
+        run: |
+          CARGO_BUILD_CMD=cargo
+          if [ -n "${CROSS}" ]; then
+            echo "Using Cross"
+            cargo binstall cross --no-confirm
+            CARGO_BUILD_CMD=cross
+          fi
+          ${CARGO_BUILD_CMD} build --verbose --locked --release --target ${{ matrix.target }}
+        env:
+          CROSS: "${{ matrix.cross }}"
 
-      - name: Release Binary
+      - name: Copy Binary
         shell: bash
         run: |
           BIN_SUFFIX=""
@@ -53,17 +70,37 @@ jobs:
 
           # Define a better name for the final binary
           BIN_RELEASE="${PROJECT_NAME}-${{ matrix.name }}${BIN_SUFFIX}"
-          BIN_RELEASE_VERSIONED="${PROJECT_NAME}-${{ github.ref_name }}-${{ matrix.name }}${BIN_SUFFIX}"
 
           # Move the built binary where you want it
           mkdir -p ./artifacts
           mv "${BIN_OUTPUT}" "./artifacts/${BIN_RELEASE}"
 
+      - name: Compress binary
+        if: runner.os != 'Windows'
+        run: |
+          tar -czvf ./${{ matrix.name }}.tar.gz -C ./artifacts .
+
+      - name: Compress binary (windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path .\artifacts\* -DestinationPath .\${{ matrix.name }}.zip
+
       - name: Upload binary
+        if: runner.os != 'Windows'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.name }}
-          path: ./artifacts/
+          name: ${{ matrix.name }}.tar.gz
+          path: ${{ matrix.name }}.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload binary (windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}.zip
+          path: ${{ matrix.name }}.zip
           if-no-files-found: error
           retention-days: 1
 
