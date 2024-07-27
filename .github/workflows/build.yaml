@@ -3,11 +3,28 @@ on: [push]
 env:
   PROJECT_NAME: kubectl-node-provider-id
 jobs:
-  build:
-    # Set the job to run on the platform specified by the matrix below
-    runs-on: ${{ matrix.runner }}
+  # grab the current version from cargo.toml
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    # Define the build matrix for cross-compilation
+      - name: Get project version
+        id: version
+        run: |
+          project_version=$(cargo metadata --format-version 1 | jq -r ".packages[] | select(.name == \"${PROJECT_NAME}\") | .version")
+          echo "project_version=$project_version" >> $GITHUB_OUTPUT
+    outputs:
+      project_version: ${{ steps.version.outputs.project_version }}
+
+  # build cross-platform binaries
+  build:
+    runs-on: ${{ matrix.runner }}
+    needs:
+      - version
+    env:
+      PROJECT_VERSION: ${{ needs.version.outputs.project_version }}
     strategy:
       matrix:
         include:
@@ -28,7 +45,6 @@ jobs:
             runner: macos-latest
             target: aarch64-apple-darwin
 
-    # The steps to run for each matrix item
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -65,33 +81,35 @@ jobs:
             BIN_SUFFIX=".exe"
           fi
 
-          # The built binary output location
+          # built binary output location
           BIN_OUTPUT="target/${{ matrix.target }}/release/${PROJECT_NAME}${BIN_SUFFIX}"
 
-          # Define a better name for the final binary
-          BIN_RELEASE="${PROJECT_NAME}-${{ matrix.name }}${BIN_SUFFIX}"
+          # friendly name for the binary
+          BIN_RELEASE="${PROJECT_NAME}${BIN_SUFFIX}"
 
-          # Move the built binary where you want it
+          # move to artifacts directory
           mkdir -p ./artifacts
           mv "${BIN_OUTPUT}" "./artifacts/${BIN_RELEASE}"
 
       - name: Compress binary
         if: runner.os != 'Windows'
         run: |
-          tar -czvf ./${{ matrix.name }}.tar.gz -C ./artifacts .
+          cp LICENSE ./artifacts
+          tar -czvf ./${PROJECT_NAME}_${PROJECT_VERSION}-${{ matrix.name }}.tar.gz -C ./artifacts .
 
       - name: Compress binary (windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          Compress-Archive -Path .\artifacts\* -DestinationPath .\${{ matrix.name }}.zip
+          Copy-Item -Path "LICENSE" -Destination ".\artifacts"
+          Compress-Archive -Path .\artifacts\* -DestinationPath .\${env:PROJECT_NAME}_${env:PROJECT_VERSION}-${{ matrix.name }}.zip
 
       - name: Upload binary
         if: runner.os != 'Windows'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.name }}.tar.gz
-          path: ${{ matrix.name }}.tar.gz
+          name: ${{ env.PROJECT_NAME }}_${{ env.PROJECT_VERSION }}-${{ matrix.name }}.tar.gz
+          path: ${{ env.PROJECT_NAME }}_${{ env.PROJECT_VERSION }}-${{ matrix.name }}.tar.gz
           if-no-files-found: error
           retention-days: 1
 
@@ -99,11 +117,12 @@ jobs:
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.name }}.zip
-          path: ${{ matrix.name }}.zip
+          name: ${{ env.PROJECT_NAME }}_${{ env.PROJECT_VERSION }}-${{ matrix.name }}.zip
+          path: ${{ env.PROJECT_NAME }}_${{ env.PROJECT_VERSION }}-${{ matrix.name }}.zip
           if-no-files-found: error
           retention-days: 1
 
+  # release the binaries
   release:
     runs-on: ubuntu-latest
     needs:
@@ -111,6 +130,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         if: startsWith(github.ref, 'refs/tags/')
+
       - name: Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
@@ -121,7 +141,5 @@ jobs:
           name: "${{ github.ref_name }}"
           fail_on_unmatched_files: true
           files: |
-            ./linux-amd64/*
-            ./macos-arm64/*
-            ./win-amd64/*
-            ./macos-amd64/*
+            ./**/*.tar.gz
+            ./**/*.zip
