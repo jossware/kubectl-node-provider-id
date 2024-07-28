@@ -34,8 +34,8 @@ pub(crate) struct Cli {
     /// "{:url}" which will return the full provider id.
     ///
     /// You can use a template to define how you want information extracted from
-    /// `.spec.providerID`. The plugin will parse the `providerID` and make the
-    /// discovered information available via tokens you can use in your
+    /// `.spec.providerID`. The plugin will parse the `providerID` value and
+    /// make the discovered information available via tokens you can use in your
     /// templates. It splits the value of the ID (the part after the provider
     /// "protocol") by "/" and it is possible to access individual parts by
     /// index or by named helpers.
@@ -51,6 +51,7 @@ pub(crate) struct Cli {
     /// | {:url}      | aws://us-west-2/i-0abcdef1234567890 |
     /// | {0}         | us-west-2                           |
     /// | {1}         | i-0abcdef1234567890                 |
+    /// | {:node}     | ip-192-168-1-123.ec2.internal       |
     ///
     /// The default template can also be specified in the configuration file.
     #[arg(short, long, env("NODEPID_TEMPLATE"), verbatim_doc_comment)]
