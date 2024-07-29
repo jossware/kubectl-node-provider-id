@@ -110,6 +110,7 @@ struct NodeProviderID {
 
 impl NodeProviderID {
     fn new(node: &Node, template: &dyn Template) -> color_eyre::Result<Self> {
+        let node_name = node.name_any();
         let mut provider_id = node
             .spec
             .as_ref()
@@ -118,7 +119,7 @@ impl NodeProviderID {
             .unwrap_or("".to_string());
 
         if !provider_id.is_empty() {
-            let pid = ProviderID::new(&provider_id)?;
+            let pid = ProviderID::new(&node_name, &provider_id)?;
             provider_id = template.render(&pid)?;
         }
 
