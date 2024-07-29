@@ -79,6 +79,7 @@ it is possible to access individual parts by index or by named helpers.
 
 Example with an AWS Provider ID: "aws://us-west-2/i-0abcdef1234567890".
 
+| Token       | Value                               |
 |-------------|-------------------------------------|
 | {:provider} | aws                                 |
 | {:last}     | i-0abcdef1234567890                 |
