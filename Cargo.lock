@@ -1023,8 +1023,8 @@ dependencies = [
 
 [[package]]
 name = "node-provider-labeler"
-version = "0.7.0"
-source = "git+https://github.com/jossware/node-provider-labeler.git#151bafd6b5f9900b2b48a646a2d6f51f412f9536"
+version = "0.8.0"
+source = "git+https://github.com/jossware/node-provider-labeler.git#51b1872cb338650fb32ed8cd9b75eaf240de2837"
 dependencies = [
  "axum",
  "clap",
