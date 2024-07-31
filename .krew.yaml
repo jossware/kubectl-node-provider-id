@@ -1,0 +1,41 @@
+apiVersion: krew.googlecontainertools.github.com/v1alpha2
+kind: Plugin
+metadata:
+  name: node-provider-id
+spec:
+  version: "v{{ .TagName }}"
+  platforms:
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: amd64
+    {{addURIAndSha "https://github.com/jossware/kubectl-node-provider-id/releases/download/v{{ .TagName }}/kubectl-node-provider-id_{{ .TagName }}-macos-amd64.tar.gz" .TagName }}
+    bin: "./kubectl-node-provider-id"
+  - selector:
+      matchLabels:
+        os: darwin
+        arch: arm64
+    {{addURIAndSha "https://github.com/jossware/kubectl-node-provider-id/releases/download/v{{ .TagName }}/kubectl-node-provider-id_{{ .TagName }}-macos-arm64.tar.gz" .TagName }}
+    bin: "./kubectl-node-provider-id"
+  - selector:
+      matchLabels:
+        os: linux
+        arch: amd64
+    {{addURIAndSha "https://github.com/jossware/kubectl-node-provider-id/releases/download/v{{ .TagName }}/kubectl-node-provider-id_{{ .TagName }}-linux-amd64.tar.gz" .TagName }}
+    bin: "./kubectl-node-provider-id"
+  - selector:
+      matchLabels:
+        os: linux
+        arch: arm64
+    {{addURIAndSha "https://github.com/jossware/kubectl-node-provider-id/releases/download/v{{ .TagName }}/kubectl-node-provider-id_{{ .TagName }}-linux-arm64.tar.gz" .TagName }}
+    bin: "./kubectl-node-provider-id"
+  - selector:
+      matchLabels:
+        os: windows
+        arch: amd64
+    {{addURIAndSha "https://github.com/jossware/kubectl-node-provider-id/releases/download/v{{ .TagName }}/kubectl-node-provider-id_{{ .TagName }}-win-amd64.zip" .TagName }}
+    bin: "./kubectl-node-provider-id.exe"
+  shortDescription: List allocations per resources, nodes, pods.
+  homepage: https://github.com/jossware/kubectl-node-provider-id
+  description: |
+    kubectl plugin to view Node provider IDs
